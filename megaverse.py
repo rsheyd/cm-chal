@@ -11,16 +11,29 @@ class MegaverseAPI:
     def __init__(self):
         self.candidate_id = os.getenv("CM_CANDIDATE_ID")
         
-    def create_polyanet(self, row, col):
-        try:
-            response = requests.post(
-                f"{self.BASE_URL}/polyanets",
-                json={"row": row, "column": col, "candidateId": self.candidate_id}
-            )
-            response.raise_for_status()
-            print(f"Polyanet created at ({row}, {col})")
-        except requests.RequestException as e:
-            print(f"Failed to create Polyanet at ({row}, {col}): {e}")
+    def create_polyanet(self, row, col, max_retries=5):
+        retries = 0
+        backoff_time = 0.5
+
+        while retries < max_retries:
+            try:
+                response = requests.post(
+                    f"{self.BASE_URL}/polyanets",
+                    json={"row": row, "column": col, "candidateId": self.candidate_id}
+                )
+                response.raise_for_status()
+                print(f"Polyanet created at ({row}, {col})")
+                return
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 429:
+                    # Too many requests, apply exponential backoff
+                    print(f"Rate limit hit. Retrying in {backoff_time} seconds...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2  # Double the wait time for exponential backoff
+                    retries += 1
+                else:
+                    print(f"Failed to delete Polyanet at ({row}, {col}): {e}")
+                    break  # Exit if it's a non-rate-limiting error
 
     def delete_polyanet(self, row, col, max_retries=5):
         retries = 0
@@ -46,29 +59,28 @@ class MegaverseAPI:
                     print(f"Failed to delete Polyanet at ({row}, {col}): {e}")
                     break  # Exit if it's a non-rate-limiting error
 
-    def get_goal_map(self):
+    def get_map(self):
         try:
             response = requests.get(f"{self.BASE_URL}/map/{self.candidate_id}/goal")
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            print(f"Failed to fetch goal map: {e}")
+            print(f"Failed to fetch map: {e}")
             return None
 
 
 class Grid:
-    def __init__(self, api, size=11):
+    def __init__(self, api):
         self.api = api
-        self.size = size
-        self.grid = [[" " for _ in range(size)] for _ in range(size)]
+        self.map = self.api.get_map().get("goal", [])
+        self.size = len(self.map)
+        self.grid = [[" " for _ in range(self.size)] for _ in range(self.size)]
 
     def reset_map(self):
-        """Deletes only the polyanets specified in the goal map."""
-        response = self.api.get_goal_map()
-        goal_map = response.get("goal", [])
+        """Deletes only the polyanets specified in the map."""
         for row in range(self.size):
-            for col in range(self.size):
-                if goal_map[row][col] == "POLYANET":
+            for col in range(len(self.map[row])):
+                if self.map[row][col] == "POLYANET":
                     self.api.delete_polyanet(row, col)
         print("Map reset.")
 
