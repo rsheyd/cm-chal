@@ -22,12 +22,42 @@ class MegaverseAPI:
         except requests.RequestException as e:
             print(f"Failed to create Polyanet at ({row}, {col}): {e}")
 
+    def delete_polyanet(self, row, col):
+        try:
+            response = requests.delete(
+                f"{self.BASE_URL}/polyanets",
+                json={"row": row, "column": col, "candidateId": self.candidate_id}
+            )
+            response.raise_for_status()
+            print(f"Polyanet deleted at ({row}, {col})")
+        except requests.RequestException as e:
+            print(f"Failed to delete Polyanet at ({row}, {col}): {e}")
+
+    def get_goal_map(self):
+        try:
+            response = requests.get(f"{self.BASE_URL}/map/{self.candidate_id}/goal")
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Failed to fetch goal map: {e}")
+            return None
+
 
 class Grid:
-    def __init__(self, api, size=12):
+    def __init__(self, api, size=11):
         self.api = api
         self.size = size
         self.grid = [[" " for _ in range(size)] for _ in range(size)]
+
+    def reset_map(self):
+        """Deletes only the polyanets specified in the goal map."""
+        response = self.api.get_goal_map()
+        goal_map = response.get("goal", [])
+        for row in range(self.size):
+            for col in range(self.size):
+                if goal_map[row][col] == "POLYANET":
+                    self.api.delete_polyanet(row, col)
+        print("Map reset.")
 
     def create_x_shape(self):
         # Top-left to bottom-right
@@ -48,7 +78,7 @@ class Grid:
 def main():
     api = MegaverseAPI()
     grid = Grid(api)
-    grid.create_x_shape()
+    grid.reset_map()
 
 if __name__ == "__main__":
     main()
