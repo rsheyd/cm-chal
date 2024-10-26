@@ -22,16 +22,29 @@ class MegaverseAPI:
         except requests.RequestException as e:
             print(f"Failed to create Polyanet at ({row}, {col}): {e}")
 
-    def delete_polyanet(self, row, col):
-        try:
-            response = requests.delete(
-                f"{self.BASE_URL}/polyanets",
-                json={"row": row, "column": col, "candidateId": self.candidate_id}
-            )
-            response.raise_for_status()
-            print(f"Polyanet deleted at ({row}, {col})")
-        except requests.RequestException as e:
-            print(f"Failed to delete Polyanet at ({row}, {col}): {e}")
+    def delete_polyanet(self, row, col, max_retries=5):
+        retries = 0
+        backoff_time = 0.5
+
+        while retries < max_retries:
+            try:
+                response = requests.delete(
+                    f"{self.BASE_URL}/polyanets",
+                    json={"row": row, "column": col, "candidateId": self.candidate_id}
+                )
+                response.raise_for_status()
+                print(f"Polyanet deleted at ({row}, {col})")
+                return
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 429:
+                    # Too many requests, apply exponential backoff
+                    print(f"Rate limit hit. Retrying in {backoff_time} seconds...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2  # Double the wait time for exponential backoff
+                    retries += 1
+                else:
+                    print(f"Failed to delete Polyanet at ({row}, {col}): {e}")
+                    break  # Exit if it's a non-rate-limiting error
 
     def get_goal_map(self):
         try:
