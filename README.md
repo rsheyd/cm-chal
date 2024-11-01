@@ -36,9 +36,9 @@ Replace `your_candidate_id` with your actual candidate ID.
 
 1. Clone the repository
 
-1.  Create a .env file and set your candidate ID as mentioned above.
+1. Create a .env file and set your candidate ID as mentioned above.
     
 1. Run the application: `python main.py`
 
-1.  The MapBuilder will automatically retrieve the goal map and place the entities accordingly. You can also specify a specific row to build by modifying the build\_map method call in main.py.
+1. The MapBuilder will automatically retrieve the goal map and place the entities accordingly. You can also specify a specific row to build by modifying the build\_map method call in main.py.
 
