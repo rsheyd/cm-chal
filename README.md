@@ -30,7 +30,7 @@ Before running the application, you need to set your candidate ID as an environm
 CM_CANDIDATE_ID=your_candidate_id
 ```
 
-Replace `your\_candidate\_id` with your actual candidate ID.
+Replace `your_candidate_id` with your actual candidate ID.
 
 ## Usage
 
