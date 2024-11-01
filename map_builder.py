@@ -1,5 +1,5 @@
 from typing import Dict
-from api import MegaverseAPI  # Import MegaverseAPI
+from api import MegaverseAPI
 
 class MapBuilder:
     ENTITY_MAPPING: Dict[str, str] = {
