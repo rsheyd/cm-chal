@@ -1,4 +1,4 @@
-# Megaverse Map Builder
+# Megaverse Map Builder (job application project)
 
 ## Overview
 
